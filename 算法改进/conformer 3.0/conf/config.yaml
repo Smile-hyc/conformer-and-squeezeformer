@@ -1,0 +1,79 @@
+# conf/config.yaml
+# 中等模型，正常参数，正式训练的配置
+
+# 数据相关设置
+data:
+  data_path: "./data_aishell" #数据集路径，将dev,train,test数据集放到主目录下的data_aishell文件夹中
+  #数据清单文件路径
+  train_manifest: "data/train.csv" #训练集路径
+  dev_manifest: "data/dev.csv" #验证集路径
+  test_manifest: "data/test.csv" #测试集路径
+  vocab_path: "data/vocabulary.txt" #词表路径
+
+  sample_rate: 16000 #采样率
+  n_mels: 80 # Mel 滤波器个数：决定了特征图的高度。80 是目前的行业标准
+  n_fft: 400 # FFT 窗口大小：把时域转频域的窗口，400点对应 25ms
+  hop_length: 160 # 帧移 (Stride)：窗口每次移动多少点，160点对应 10ms
+  
+
+# 模型结构参数
+model:
+  encoder:
+    d_input: 80            # 输入特征维度，等于n_mels
+    d_model: 128           # 128维，确保能被注意力头数整除
+    n_layers: 8            # 层数
+    n_heads: 4             # 注意力头数，128 ÷ 4 = 32，可以整除
+    d_ffn: 512             # 前馈神经网络维度，4倍d_model
+    dropout: 0.1           # dropout比例
+    cnn_module_kernel: 15  # 较小的卷积核
+    
+    # Squeezeformer 配置
+    use_squeezeformer: true    # 启用Squeezeformer优化
+    downsample_ratio: 2        # 下采样比例  
+    downsample_layer: 4        # 在8层中间下采样
+    
+  decoder:
+    n_layers: 3            # 增加解码器深度
+    n_heads: 4
+    d_ffn: 1024
+    dropout: 0.1
+    
+  ctc_weight: 0.5          # 降低CTC权重，更多依赖attention
+
+# 训练超参数
+training:
+  batch_size: 64           # 增大batch size
+  num_workers: 12           # 增加数据加载线程
+  epochs: 100              # 更多训练轮次
+  
+  # 学习率设置
+  lr: 0.001                # 初始学习率
+  warmup_steps: 8000       # 学习率预热
+  peak_lr: 0.002           # 峰值学习率
+  
+  # 优化器
+  optimizer: "adamw"       # 使用AdamW
+  weight_decay: 0.01       # 权重衰减
+  betas: [0.9, 0.98]       # Adam beta参数
+  
+  # 学习率调度
+  scheduler: "cosine"      # 余弦退火
+  min_lr: 1e-6             # 最小学习率
+  decay_steps: 50000       # 衰减步数
+  
+  # 训练设置
+  clip_grad_norm: 1.0      # 梯度裁剪
+  gradient_accumulation_steps: 2  # 梯度累积
+  
+  # 早停
+  early_stopping: true
+  early_stopping_patience: 15        # 宽容15轮
+  early_stopping_min_delta: 0.0005   # 最小变化
+  
+  # 路径设置
+  log_dir: "logs"
+  checkpoint_dir: "checkpoints" 
+  save_interval: 5         # 每5轮保存一次
+  
+  # 进度保存
+  save_interval_steps: 2000

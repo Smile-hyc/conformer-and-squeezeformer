@@ -1,0 +1,70 @@
+# conf/config.yaml 配置文件
+# 小模型版本，超小参数
+
+# 数据相关设置
+data:
+  data_path: "./data_aishell" #数据集路径
+  #数据清单文件路径
+  train_manifest: "data/train.csv" #训练集路径
+  dev_manifest: "data/dev.csv" #验证集路径
+  test_manifest: "data/test.csv" #测试集路径
+  vocab_path: "data/vocabulary.txt" #词表路径
+  
+  sample_rate: 16000 #采样率
+  n_mels: 80 # Mel 滤波器个数：决定了特征图的高度。80 是目前的行业标准
+  n_fft: 400 # FFT 窗口大小：把时域转频域的窗口，400点对应 25ms
+  hop_length: 160 # 帧移 (Stride)：窗口每次移动多少点，160点对应 10ms
+
+# 模型结构参数 - 超轻量版本
+model:
+  encoder:
+    d_input: 80            # 输入特征维度
+    d_model: 64            # 超小模型
+    n_layers: 3            # 较少层数
+    n_heads: 2             # 注意力头数
+    d_ffn: 256             # 前馈网络维度
+    dropout: 0.1           # dropout 比例
+    cnn_module_kernel: 15  # 卷积模块核大小（能看到多“宽”的局部上下文）
+    subsampling_factor: 4  # 下采样因子，前端把音频压缩了几倍
+    
+  decoder:
+    n_layers: 1 #解码器层数
+    n_heads: 2 # 注意力头数
+    d_ffn: 128 # 前馈网络维度
+    dropout: 0.1 # dropout 比例
+    
+  ctc_weight: 0.8 # CTC 损失权重，0.8 表示 CTC 损失占总损失的 80%
+
+# 3. 训练超参数
+training:
+  batch_size: 16      # 每个批次的样本数
+  num_workers: 4      # 数据加载的线程数
+  epochs: 30          # 训练轮数
+  lr: 0.0005          # 学习率
+  
+  # 优化器
+  optimizer: "adam"
+  weight_decay: 0.001  # 权重衰减：一种正则化，防止参数数值变得太大
+  betas: [0.9, 0.999]  # Adam 的动量参数：控制梯度的惯性，通常不用动
+  
+  # 学习率调度
+  scheduler: "step" # 学习率调度器类型
+  step_size: 10     # 每隔多少个epoch调整一次学习率
+  gamma: 0.8        # 学习率衰减率
+  
+  # 训练设置
+  clip_grad_norm: 5.0 # 梯度裁剪阈值，防止梯度爆炸
+  gradient_accumulation_steps: 4 # 梯度累积步数，模拟更大批次
+  
+  # 早停
+  early_stopping: false 
+  early_stopping_patience: 10
+  early_stopping_min_delta: 0.001 
+  
+  # 路径设置
+  log_dir: "logs"                    # 日志目录
+  checkpoint_dir: "checkpoints"      # 检查点目录
+  save_interval: 2                   # 保存间隔
+  
+  # 进度保存
+  save_interval_steps: 1000

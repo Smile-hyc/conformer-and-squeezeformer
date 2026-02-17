@@ -1,0 +1,74 @@
+# conf/config.yaml
+# 中等模型，正常参数，正式训练的配置
+
+# 数据相关设置
+data:
+  data_path: "./data_aishell" #数据集路径, 将dev,train,test数据集放到主目录下的data_aishell文件夹中
+  #数据清单文件路径
+  train_manifest: "data/train.csv" #训练集路径
+  dev_manifest: "data/dev.csv" #验证集路径
+  test_manifest: "data/test.csv" #测试集路径
+  vocab_path: "data/vocabulary.txt" #词表路径
+
+  sample_rate: 16000 #采样率
+  n_mels: 80 # Mel 滤波器个数：决定了特征图的高度。80 是目前的行业标准
+  n_fft: 400 # FFT 窗口大小：把时域转频域的窗口，400点对应 25ms
+  hop_length: 160 # 帧移 (Stride)：窗口每次移动多少点，160点对应 10ms
+  
+  # 启用数据增强
+  spec_augment: true
+  time_mask_width: 20
+  num_time_masks: 2
+  freq_mask_width: 15
+  num_freq_masks: 2
+
+# 模型结构参数 - 128维中等大小模型
+model:
+  encoder:
+    d_input: 80            # 输入特征维度
+    d_model: 128           # 从64提升到128维 (2倍容量)
+    n_layers: 6            # 从3提升到6层
+    n_heads: 4             # 注意力头数，从2提升到4头
+    d_ffn: 512             # 前馈网络维度，从256提升到512
+    dropout: 0.2           # dropout比例，增加正则化
+    cnn_module_kernel: 31  # 卷积模块核大小，使用标准卷积核
+    subsampling_factor: 4  # 下采样因子，前端把音频压缩了几倍
+    
+  decoder:
+    n_layers: 1   # 解码器层数
+    n_heads: 4    # 注意力头数
+    d_ffn: 256    # 前馈网络维度
+    dropout: 0.2  # dropout比例
+    
+  ctc_weight: 0.6          # CTC权重，平衡CTC和Attention
+
+# 训练超参数
+training:
+  batch_size: 64           # 每个批次的样本数
+  num_workers: 8           # 数据加载的线程数
+  epochs: 30               # 训练轮数
+  lr: 0.0008               # 适中学习率
+  
+
+  # 优化器
+  optimizer: "adamw"      # AdamW 优化器
+  weight_decay: 0.01      # 权重衰减
+  betas: [0.9, 0.999]     # Adam 的动量参数：控制梯度的惯性，通常不用动
+  
+  # 学习率调度
+  scheduler: "cosine"     # 余弦退火学习率调度器
+  cosine_t_max: 50        # 余弦调度的最大周期
+  
+  # 训练设置
+  clip_grad_norm: 3.0     # 梯度裁剪阈值
+  gradient_accumulation_steps: 1  # 梯度累积步数
+  
+  # 早停
+  early_stopping: true
+  early_stopping_patience: 8      # 多少个epoch没有提升就早停
+  early_stopping_min_delta: 0.005    # 最小提升阈值
+  
+  # 日志和检查点
+  log_dir: "logs"                # 日志目录
+  checkpoint_dir: "checkpoints"  # 检查点目录
+  save_interval: 2               # 保存间隔（每多少个epoch保存一次）
